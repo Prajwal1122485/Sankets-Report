@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Financial Budget Planner</title>
+<style>
+body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+}
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+    color: #38bdf8;
+}
+.card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+input, select, button {
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    margin: 5px;
+}
+button {
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: bold;
+    cursor: pointer;
+}
+.progress {
+    background: #334155;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 10px;
+}
+.bar {
+    height: 100%;
+    background: #22c55e;
+}
+.category {
+    margin-bottom: 12px;
+}
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.summary {
+    font-size: 18px;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Personal Financial Planning Dashboard</h1>
+
+    <div class="card">
+        <h3>Budget Setup</h3>
+        <select id="period">
+            <option>Monthly</option>
+            <option>Yearly</option>
+        </select>
+        <input type="number" id="budgetInput" placeholder="Total Budget">
+        <button onclick="setBudget()">Save Budget</button>
+    </div>
+
+    <div class="card">
+        <h3>Category Allocation</h3>
+        <input type="text" id="catName" placeholder="Category">
+        <input type="number" id="catLimit" placeholder="Limit">
+        <button onclick="addCategory()">Add</button>
+        <div id="categories"></div>
+    </div>
+
+    <div class="card">
+        <h3>Add Expense</h3>
+        <select id="expenseCat"></select>
+        <input type="number" id="expenseAmt" placeholder="Amount">
+        <button onclick="addExpense()">Add Expense</button>
+    </div>
+
+    <div class="card summary" id="summary"></div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("financeData")) || {
+    period: "Monthly",
+    budget: 0,
+    categories: {},
+    expenses: []
+};
+
+function save() {
+    localStorage.setItem("financeData", JSON.stringify(data));
+    render();
+}
+
+function setBudget() {
+    data.period = period.value;
+    data.budget = Number(budgetInput.value);
+    save();
+}
+
+function addCategory() {
+    if (!catName.value || !catLimit.value) return;
+    data.categories[catName.value] = { limit: Number(catLimit.value), spent: 0 };
+    save();
+}
+
+function addExpense() {
+    let c = expenseCat.value;
+    let amt = Number(expenseAmt.value);
+    if (!c || !amt) return;
+    data.categories[c].spent += amt;
+    data.expenses.push({ category: c, amount: amt });
+    save();
+}
+
+function render() {
+    categories.innerHTML = "";
+    expenseCat.innerHTML = "";
+    let totalSpent = 0;
+
+    for (let c in data.categories) {
+        let cat = data.categories[c];
+        totalSpent += cat.spent;
+        let percent = Math.min((cat.spent / cat.limit) * 100, 100);
+
+        categories.innerHTML += `
+        <div class="category">
+            <strong>${c}</strong> : ₹${cat.spent} / ₹${cat.limit}
+            <div class="progress">
+                <div class="bar" style="width:${percent}%"></div>
+            </div>
+        </div>`;
+
+        expenseCat.innerHTML += `<option>${c}</option>`;
+    }
+
+    summary.innerHTML = `
+        <b>${data.period} Budget:</b> ₹${data.budget}<br>
+        <b>Total Spent:</b> ₹${totalSpent}<br>
+        <b>Remaining:</b> ₹${data.budget - totalSpent}
+    `;
+}
+
+render();
+</script>
+</body>
+</html>
